@@ -22,11 +22,11 @@
         #joystick-zone { bottom: 30px; left: 30px; width: 120px; height: 120px; background-color: rgba(255, 255, 255, 0.3); border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; }
         #joystick-knob { width: 50px; height: 50px; background-color: rgba(255, 183, 178, 0.9); border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.2); position: relative; }
 
-        /* 액션 및 농구 버튼 */
-        #action-btn, #shoot-btn { bottom: 40px; right: 30px; width: 80px; height: 80px; border-radius: 50%; border: 4px solid #FFF; color: #FFF; font-weight: bold; font-size: 16px; display: none; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; user-select: none; text-align: center; z-index: 100; transition: transform 0.1s; }
-        #action-btn { background-color: #E57373; }
-        #shoot-btn { background-color: #FFA726; width: 100px; height: 100px; }
-        #shoot-btn:active, #action-btn:active { transform: scale(0.92); filter: brightness(0.9); } /* 클릭 시 눌리는 애니메이션 */
+        /* 액션 및 농구 버튼 (서로 안 겹치게 나란히 배치) */
+        #action-btn, #shoot-btn { bottom: 40px; height: 80px; border-radius: 50%; border: 4px solid #FFF; color: #FFF; font-weight: bold; font-size: 16px; display: none; justify-content: center; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; user-select: none; text-align: center; z-index: 100; transition: transform 0.1s; }
+        #action-btn { right: 30px; width: 80px; background-color: #E57373; }
+        #shoot-btn { right: 125px; width: 90px; background-color: #FFA726; } /* 보기 버튼 왼쪽에 슛 버튼 배치 */
+        #shoot-btn:active, #action-btn:active { transform: scale(0.92); filter: brightness(0.9); }
 
         /* 모달 팝업 공통 */
         .modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 340px; background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-align: center; z-index: 100; pointer-events: auto; }
@@ -81,7 +81,7 @@
         </div>
 
         <div id="action-btn" class="ui-element">보기</div>
-        <div id="shoot-btn" class="ui-element">꾹 눌러서<br>던지기</div>
+        <div id="shoot-btn" class="ui-element">던지기</div>
         
         <div id="charge-bar-container" class="ui-element">
             <div id="charge-bar"></div>
@@ -153,7 +153,6 @@
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        // 조명 밝기 증가 (1.2)
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
         
@@ -163,7 +162,7 @@
         scene.add(dirLight);
 
         // ==========================================
-        // 2. 머티리얼 및 지형 생성
+        // 2. 머티리얼 및 지형 생성 (섬 분리 및 재배치 완료)
         // ==========================================
         const matGrass = new THREE.MeshStandardMaterial({ color: 0xA8E6CF, flatShading: true });
         const matCourt = new THREE.MeshStandardMaterial({ color: 0xFFA07A, flatShading: true });
@@ -176,13 +175,17 @@
 
         const interactables = [];
 
+        // 메인 섬 (중앙)
         scene.add(new THREE.Mesh(new THREE.CylinderGeometry(35, 35, 2, 24), matGrass)).position.set(0, -1, 0);
-        scene.add(new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 2, 24), matCourt)).position.set(55, -1, -15);
-        scene.add(new THREE.Mesh(new THREE.BoxGeometry(45, 2.2, 12), matRiver)).position.set(55, -1, -15);
+        
+        // 농구 섬 (우측 상단으로 멀리 분리)
+        scene.add(new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 2, 24), matCourt)).position.set(70, -1, -20);
+        scene.add(new THREE.Mesh(new THREE.BoxGeometry(45, 2.2, 12), matRiver)).position.set(70, -1, -20);
 
-        for(let i=0; i<6; i++) {
+        // 다리 생성 (메인 섬 ~ 농구 섬)
+        for(let i=0; i<7; i++) {
             const plank = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 2), matWood);
-            plank.position.set(33 + i*3.5, 0, -3 - i*2);
+            plank.position.set(32 + i*3.2, 0, -6 - i*1.6);
             plank.rotation.y = -Math.PI / 6;
             scene.add(plank);
         }
@@ -224,15 +227,9 @@
         createBuilding(-12, 10, 0xC7F464, "재호 생일 박물관");
         createBuilding(12, 10, 0xFFD166, "정빈 생일 박물관");
 
-        const signGrp = new THREE.Group();
-        const signPost = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 3), matWood); signPost.position.y = 1.5;
-        const signBoard = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 0.5), new THREE.MeshStandardMaterial({color:0xFFD166})); signBoard.position.y = 3;
-        signGrp.add(signPost); signGrp.add(signBoard); signGrp.position.set(55, 0, -5); scene.add(signGrp);
-        signGrp.userData = { type: 'gallery', title: '농구 코트 추억 갤러리' };
-        interactables.push(signGrp);
-
+        // 정빈 NPC (섬 중앙부 안전한 위치)
         const npcGrp = new THREE.Group();
-        npcGrp.position.set(0, 0, 20); npcGrp.rotation.y = Math.PI; scene.add(npcGrp);
+        npcGrp.position.set(0, 0, 12); npcGrp.rotation.y = Math.PI; scene.add(npcGrp);
         loadModelWithFallback('character_jeongbin.glb', npcGrp, (wrapper) => {
             const nBody = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 2, 8), matJeongbin); nBody.position.y = 1;
             const nHead = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 8), matSkin); nHead.position.y = 2.8;
@@ -241,16 +238,21 @@
         npcGrp.userData = { type: 'npc' };
         interactables.push(npcGrp);
 
+        // 🏀 농구 골대 (사인보드 삭제 완료, 골대가 직접 갤러리가 됨)
         const hoopGrp = new THREE.Group();
-        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 9), new THREE.MeshStandardMaterial({color:0x777777})); pole.position.set(55, 4.5, -28);
-        const backboard = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 0.2), new THREE.MeshStandardMaterial({color:0xFFFFFF, flatShading: true})); backboard.position.set(55, 8, -27.8);
-        const rim = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.1, 8, 16), new THREE.MeshStandardMaterial({color:0xE65100})); rim.position.set(55, 7, -26.8); rim.rotation.x = Math.PI / 2;
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 9), new THREE.MeshStandardMaterial({color:0x777777})); pole.position.set(70, 4.5, -32);
+        const backboard = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 0.2), new THREE.MeshStandardMaterial({color:0xFFFFFF, flatShading: true})); backboard.position.set(70, 8, -31.8);
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.1, 8, 16), new THREE.MeshStandardMaterial({color:0xE65100})); rim.position.set(70, 7, -30.8); rim.rotation.x = Math.PI / 2;
         hoopGrp.add(pole); hoopGrp.add(backboard); hoopGrp.add(rim); scene.add(hoopGrp);
-        const hoopTarget = new THREE.Vector3(55, 7, -26.8);
+        const hoopTarget = new THREE.Vector3(70, 7, -30.8);
 
-        // 플레이어
+        // 골대 자체에 갤러리 데이터 할당
+        hoopGrp.userData = { type: 'gallery', title: '농구 코트 추억 갤러리' };
+        interactables.push(hoopGrp);
+
+        // 플레이어 시작 지점 (섬 한가운데 안정적인 위치)
         const player = new THREE.Group();
-        player.position.set(0, 0, 26);
+        player.position.set(0, 0, 18);
         scene.add(player);
 
         loadModelWithFallback('character.glb', player, (wrapper) => {
@@ -303,7 +305,7 @@
         });
 
         // ==========================================
-        // 4. 조이스틱 설정
+        // 4. 조이스틱 설정 (충돌 경계값 섬 재배치에 맞게 수정)
         // ==========================================
         const joyZone = document.getElementById('joystick-zone');
         const joyKnob = document.getElementById('joystick-knob');
@@ -331,10 +333,9 @@
         }
 
         function canMoveTo(newX, newZ) {
-            if (Math.hypot(newX, newZ) <= 34.5) return true;
-            if (Math.hypot(newX - 55, newZ + 15) <= 19.5) return true;
-            const distToBridge = distToSegment(newX, newZ, 30, -1, 48, -13);
-            if (distToBridge <= 3.5) return true;
+            if (Math.hypot(newX, newZ) <= 34.5) return true; // 메인 섬
+            if (Math.hypot(newX - 70, newZ + 20) <= 19.5) return true; // 농구 섬
+            if (distToSegment(newX, newZ, 32, -6, 51, -16) <= 4.5) return true; // 다리 구역
             return false;
         }
         function distToSegment(px, py, x1, y1, x2, y2) {
@@ -380,30 +381,40 @@
         });
 
         // ==========================================
-        // 6. 상호작용 및 UI 제어
+        // 6. 상호작용 및 UI 제어 (농구장에서 보기 버튼 활성화 유지)
         // ==========================================
         function checkInteractions() {
             if (currentMode === 'UI_OPEN') return;
 
-            const inBballZone = player.position.x > 40 && player.position.z > -12 && player.position.z < 2;
+            // 농구섬 근처 진입 체크
+            const inBballZone = player.position.x > 50 && player.position.z > -25 && player.position.z < 10;
+            
             if (inBballZone && currentMode !== 'BASKETBALL') {
-                currentMode = 'BASKETBALL'; shootBtn.style.display = 'flex'; actionBtn.style.display = 'none';
+                currentMode = 'BASKETBALL'; shootBtn.style.display = 'flex'; 
             } else if (!inBballZone && currentMode === 'BASKETBALL') {
                 currentMode = 'NORMAL'; shootBtn.style.display = 'none'; trajectoryLine.visible = false;
-                isCharging = false; chargeBarContainer.style.display = 'none'; // 구역 벗어나면 게이지 즉시 취소
+                isCharging = false; chargeBarContainer.style.display = 'none';
             }
 
-            if (currentMode === 'NORMAL') {
-                let nearest = null, minDist = 7;
-                for(let obj of interactables) {
-                    if (player.position.distanceTo(obj.position) < minDist) { minDist = player.position.distanceTo(obj.position); nearest = obj; }
+            let nearest = null, minDist = 7;
+            for(let obj of interactables) {
+                let dist = player.position.distanceTo(obj.position);
+                
+                // 골대는 강 건너에 있어도 코트 안에서는 누를 수 있게 거리 허용치를 넓힘
+                if (obj === hoopGrp && dist < 24) {
+                    nearest = obj; break;
                 }
-                currentInteractable = nearest;
-                if (currentInteractable) {
-                    actionBtn.style.display = 'flex'; actionBtn.innerText = currentInteractable.userData.type === 'npc' ? '대화' : '보기';
-                } else {
-                    actionBtn.style.display = 'none';
-                }
+                
+                if (dist < minDist) { minDist = dist; nearest = obj; }
+            }
+            
+            currentInteractable = nearest;
+            
+            // 농구 모드 중이라도 상호작용 가능한 객체(골대 등)가 있으면 보기 버튼 노출!
+            if (currentInteractable) {
+                actionBtn.style.display = 'flex'; actionBtn.innerText = currentInteractable.userData.type === 'npc' ? '대화' : '보기';
+            } else {
+                actionBtn.style.display = 'none';
             }
         }
 
@@ -448,28 +459,18 @@
         document.getElementById('npc-close-btn').addEventListener('click', closeUI);
 
         // ==========================================
-        // 7. 농구 슈팅 게임 로직 (이벤트 반응성 강화)
+        // 7. 농구 슈팅 게임 로직
         // ==========================================
         const startCharge = (e) => {
-            e.preventDefault(); // 스크롤 등 기본 터치동작 방지
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             if(isBallFlying) return;
-            isCharging = true; 
-            chargeAmount = 0.1; // 짧게 눌러도 약간 날아가게 설정
-            chargeBarContainer.style.display = 'block'; 
-            trajectoryLine.visible = true;
+            isCharging = true; chargeAmount = 0.1; chargeBarContainer.style.display = 'block'; trajectoryLine.visible = true;
         };
 
         const endCharge = () => {
-            if(isCharging) { 
-                isCharging = false; 
-                chargeBarContainer.style.display = 'none'; 
-                trajectoryLine.visible = false; 
-                shootBall(); 
-            }
+            if(isCharging) { isCharging = false; chargeBarContainer.style.display = 'none'; trajectoryLine.visible = false; shootBall(); }
         };
 
-        // 모바일/PC 모두 완벽 호환되도록 다양한 이벤트 리스너 부착
         shootBtn.addEventListener('pointerdown', startCharge);
         shootBtn.addEventListener('touchstart', startCharge, { passive: false });
         window.addEventListener('pointerup', endCharge);
@@ -480,9 +481,14 @@
             if (!isCharging) return;
             chargeAmount += 0.02; if(chargeAmount > 1) chargeAmount = 0.1;
             chargeBar.style.width = (chargeAmount * 100) + '%';
+            
             const startPos = player.position.clone().add(new THREE.Vector3(0, 2, 0));
             const dir = hoopTarget.clone().sub(startPos).normalize();
-            const hitDist = startPos.distanceTo(hoopTarget) * (chargeAmount * 2.0);
+            const distToTarget = startPos.distanceTo(hoopTarget);
+            
+            // 새롭게 멀어진 골대에 맞춰서 배율 조정
+            const hitDist = distToTarget * (chargeAmount * 1.8); 
+            
             const endPos = startPos.clone().add(dir.multiplyScalar(hitDist));
             const height = Math.max(10, hitDist * 0.4);
 
@@ -501,23 +507,31 @@
             isBallFlying = true; flightTime = 0; basketball.visible = true;
             ballStartPos.copy(player.position).add(new THREE.Vector3(0, 2, 0));
             const dir = hoopTarget.clone().sub(ballStartPos).normalize();
-            const hitDist = ballStartPos.distanceTo(hoopTarget) * (chargeAmount * 2.0);
+            
+            const distToTarget = ballStartPos.distanceTo(hoopTarget);
+            const hitDist = distToTarget * (chargeAmount * 1.8); 
+            
             ballTargetPos.copy(ballStartPos).add(dir.multiplyScalar(hitDist));
             ballPeakHeight = Math.max(10, hitDist * 0.4);
             player.lookAt(hoopTarget.x, player.position.y, hoopTarget.z);
         }
 
         // ==========================================
-        // 8. 미니맵
+        // 8. 미니맵 (새로운 간격에 맞춰 비율 축소 및 재매핑)
         // ==========================================
         const minimapCanvas = document.getElementById('minimap');
         const ctx = minimapCanvas.getContext('2d');
         function drawMinimap() {
             ctx.clearRect(0, 0, 120, 120); ctx.fillStyle = '#FFE4E1'; ctx.fillRect(0, 0, 120, 120);
-            const mapX = (x) => (x + 40); const mapZ = (z) => (z + 40);
-            ctx.fillStyle = '#A8E6CF'; ctx.beginPath(); ctx.arc(mapX(0), mapZ(0), 35, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#FFA07A'; ctx.beginPath(); ctx.arc(mapX(55), mapZ(-15), 20, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#4FC3F7'; ctx.fillRect(mapX(35), mapZ(-20), 40, 6);
+            
+            // 캔버스 사이즈 120에 딱 맞게 정밀 매핑 (0.9 배율로 축소)
+            const mapX = (x) => (x + 35) * 0.9; 
+            const mapZ = (z) => (z + 35) * 0.9;
+            
+            ctx.fillStyle = '#A8E6CF'; ctx.beginPath(); ctx.arc(mapX(0), mapZ(0), 35 * 0.9, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#FFA07A'; ctx.beginPath(); ctx.arc(mapX(70), mapZ(-20), 20 * 0.9, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#4FC3F7'; ctx.fillRect(mapX(70 - 22.5), mapZ(-20 - 6), 45 * 0.9, 12 * 0.9);
+            
             ctx.fillStyle = '#42A5F5'; ctx.beginPath(); ctx.arc(mapX(player.position.x), mapZ(player.position.z), 4, 0, Math.PI*2); ctx.fill();
             ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.moveTo(mapX(player.position.x), mapZ(player.position.z));
             ctx.lineTo(mapX(player.position.x + Math.sin(player.rotation.y)*5), mapZ(player.position.z + Math.cos(player.rotation.y)*5));
@@ -544,7 +558,6 @@
                     player.position.z = nextZ;
                 }
                 
-                // ⚠️ 캐릭터 회전 버그 수정 완료 (상하좌우 및 45도 전부 정상 연동되는 가장 완벽한 기본 공식)
                 if (joyMove.x !== 0 || joyMove.y !== 0) {
                     player.rotation.y = Math.atan2(joyMove.x, joyMove.y);
                 }
@@ -565,7 +578,6 @@
                 if (t >= 1) {
                     isBallFlying = false; basketball.visible = false;
                     if (ballTargetPos.distanceTo(hoopTarget) < 3.5) {
-                        // 모바일 브라우저 멈춤 버그를 방지하기 위해 setTimeout 사용
                         setTimeout(() => alert("나이스 슛! 정빈이가 박수를 칩니다! 👏"), 100); 
                     }
                 } else {

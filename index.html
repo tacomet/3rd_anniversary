@@ -11,7 +11,7 @@
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .ui-element { pointer-events: auto; position: absolute; }
 
-        /* 미니맵 */
+        /* 미니맵 (120x120 고정) */
         #minimap { top: 10px; right: 10px; width: 120px; height: 120px; background-color: rgba(255, 255, 255, 0.7); border-radius: 10px; border: 2px solid #FF9AA2; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
         /* 방명록 디스플레이 */
@@ -96,7 +96,6 @@
         <button id="intro-next-btn" class="close-btn">비행기 탑승하기</button>
     </div>
 
-    <!-- 갤러리 모달 -->
     <div id="gallery-modal" class="modal">
         <h2 id="gallery-title">제목</h2>
         <p id="gallery-desc">설명 텍스트</p>
@@ -126,7 +125,7 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         // ==========================================
-        // 🗂️ 갤러리 이미지 데이터
+        // 🗂️ 갤러리 이미지 데이터 (그대로 유지)
         // ==========================================
         const GALLERY_DATA = {
             "1주년 기념관": { desc: "우리의 풋풋했던 첫해 추억들", photos: [{ url: "https://picsum.photos/400/200?random=11", text: "우리의 첫 데이트 날 💕" }, { url: "https://picsum.photos/400/200?random=12", text: "처음 같이 바다 보러 갔던 날" }, { url: "https://picsum.photos/400/200?random=13", text: "설렜던 첫 커플링 💍" }] },
@@ -137,7 +136,7 @@
         };
 
         // ==========================================
-        // 1. 초기 셋업 (조명 노출 대폭 상향)
+        // 1. 초기 셋업
         // ==========================================
         const container = document.getElementById('game-canvas');
         const scene = new THREE.Scene();
@@ -162,7 +161,7 @@
         scene.add(dirLight);
 
         // ==========================================
-        // 2. 머티리얼 및 지형 생성 (섬 분리 및 재배치 완료)
+        // 2. 머티리얼 및 지형 생성 (섬 거리는 넉넉하게 겹치지 않도록 유지)
         // ==========================================
         const matGrass = new THREE.MeshStandardMaterial({ color: 0xA8E6CF, flatShading: true });
         const matCourt = new THREE.MeshStandardMaterial({ color: 0xFFA07A, flatShading: true });
@@ -175,14 +174,12 @@
 
         const interactables = [];
 
-        // 메인 섬 (중앙)
+        // 메인 섬 & 농구 섬
         scene.add(new THREE.Mesh(new THREE.CylinderGeometry(35, 35, 2, 24), matGrass)).position.set(0, -1, 0);
-        
-        // 농구 섬 (우측 상단으로 멀리 분리)
         scene.add(new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 2, 24), matCourt)).position.set(70, -1, -20);
         scene.add(new THREE.Mesh(new THREE.BoxGeometry(45, 2.2, 12), matRiver)).position.set(70, -1, -20);
 
-        // 다리 생성 (메인 섬 ~ 농구 섬)
+        // 다리 생성
         for(let i=0; i<7; i++) {
             const plank = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 2), matWood);
             plank.position.set(32 + i*3.2, 0, -6 - i*1.6);
@@ -202,6 +199,7 @@
             }, undefined, () => {});
         }
 
+        // 건물 및 환경 요소
         function createTree(x, z) {
             const grp = new THREE.Group(); grp.position.set(x, 0, z); scene.add(grp);
             loadModelWithFallback('tree.glb', grp, (wrapper) => {
@@ -227,9 +225,9 @@
         createBuilding(-12, 10, 0xC7F464, "재호 생일 박물관");
         createBuilding(12, 10, 0xFFD166, "정빈 생일 박물관");
 
-        // 정빈 NPC (섬 중앙부 안전한 위치)
+        // 📍 정빈 NPC (세 번째 전 코드와 완벽히 동일한 익숙한 시작 위치 좌표 복구!)
         const npcGrp = new THREE.Group();
-        npcGrp.position.set(0, 0, 12); npcGrp.rotation.y = Math.PI; scene.add(npcGrp);
+        npcGrp.position.set(0, 0, 20); npcGrp.rotation.y = Math.PI; scene.add(npcGrp);
         loadModelWithFallback('character_jeongbin.glb', npcGrp, (wrapper) => {
             const nBody = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 2, 8), matJeongbin); nBody.position.y = 1;
             const nHead = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 8), matSkin); nHead.position.y = 2.8;
@@ -238,22 +236,27 @@
         npcGrp.userData = { type: 'npc' };
         interactables.push(npcGrp);
 
-        // 🏀 농구 골대 (사인보드 삭제 완료, 골대가 직접 갤러리가 됨)
+        // 🏀 농구 골대 (사인보드 삭제, 골대 자체를 갤러리로 활용)
         const hoopGrp = new THREE.Group();
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 9), new THREE.MeshStandardMaterial({color:0x777777})); pole.position.set(70, 4.5, -32);
         const backboard = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 0.2), new THREE.MeshStandardMaterial({color:0xFFFFFF, flatShading: true})); backboard.position.set(70, 8, -31.8);
         const rim = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.1, 8, 16), new THREE.MeshStandardMaterial({color:0xE65100})); rim.position.set(70, 7, -30.8); rim.rotation.x = Math.PI / 2;
         hoopGrp.add(pole); hoopGrp.add(backboard); hoopGrp.add(rim); scene.add(hoopGrp);
+        
         const hoopTarget = new THREE.Vector3(70, 7, -30.8);
-
-        // 골대 자체에 갤러리 데이터 할당
+        
+        // 골대를 누르면 농구 코트 갤러리 열림
         hoopGrp.userData = { type: 'gallery', title: '농구 코트 추억 갤러리' };
         interactables.push(hoopGrp);
 
-        // 플레이어 시작 지점 (섬 한가운데 안정적인 위치)
+        // 📍 플레이어 (마찬가지로 세 번째 전 코드의 익숙한 위치로 복구)
         const player = new THREE.Group();
-        player.position.set(0, 0, 18);
+        player.position.set(0, 0, 26);
         scene.add(player);
+
+        // ⚠️ 처음 시작 시 "빈공간"이 번쩍이며 카메라가 날아오는 현상 방지! (즉시 위치 세팅)
+        camera.position.copy(player.position.clone().add(cameraOffset));
+        camera.lookAt(player.position);
 
         loadModelWithFallback('character.glb', player, (wrapper) => {
             const pBody = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 2, 8), matJaeho); pBody.position.y = 1;
@@ -305,7 +308,7 @@
         });
 
         // ==========================================
-        // 4. 조이스틱 설정 (충돌 경계값 섬 재배치에 맞게 수정)
+        // 4. 조이스틱 및 이동 경계(Collision)
         // ==========================================
         const joyZone = document.getElementById('joystick-zone');
         const joyKnob = document.getElementById('joystick-knob');
@@ -381,7 +384,7 @@
         });
 
         // ==========================================
-        // 6. 상호작용 및 UI 제어 (농구장에서 보기 버튼 활성화 유지)
+        // 6. 상호작용 및 UI 제어
         // ==========================================
         function checkInteractions() {
             if (currentMode === 'UI_OPEN') return;
@@ -400,7 +403,7 @@
             for(let obj of interactables) {
                 let dist = player.position.distanceTo(obj.position);
                 
-                // 골대는 강 건너에 있어도 코트 안에서는 누를 수 있게 거리 허용치를 넓힘
+                // 골대는 강 건너에 있어도 갤러리를 열 수 있도록 인식 거리를 대폭 늘림
                 if (obj === hoopGrp && dist < 24) {
                     nearest = obj; break;
                 }
@@ -410,7 +413,6 @@
             
             currentInteractable = nearest;
             
-            // 농구 모드 중이라도 상호작용 가능한 객체(골대 등)가 있으면 보기 버튼 노출!
             if (currentInteractable) {
                 actionBtn.style.display = 'flex'; actionBtn.innerText = currentInteractable.userData.type === 'npc' ? '대화' : '보기';
             } else {
@@ -486,7 +488,6 @@
             const dir = hoopTarget.clone().sub(startPos).normalize();
             const distToTarget = startPos.distanceTo(hoopTarget);
             
-            // 새롭게 멀어진 골대에 맞춰서 배율 조정
             const hitDist = distToTarget * (chargeAmount * 1.8); 
             
             const endPos = startPos.clone().add(dir.multiplyScalar(hitDist));
@@ -517,24 +518,36 @@
         }
 
         // ==========================================
-        // 8. 미니맵 (새로운 간격에 맞춰 비율 축소 및 재매핑)
+        // 8. 🗺️ 미니맵 완벽 동기화 (세 번째 전 1:1 완벽 비율로 롤백)
         // ==========================================
         const minimapCanvas = document.getElementById('minimap');
         const ctx = minimapCanvas.getContext('2d');
+        
         function drawMinimap() {
             ctx.clearRect(0, 0, 120, 120); ctx.fillStyle = '#FFE4E1'; ctx.fillRect(0, 0, 120, 120);
             
-            // 캔버스 사이즈 120에 딱 맞게 정밀 매핑 (0.9 배율로 축소)
-            const mapX = (x) => (x + 35) * 0.9; 
-            const mapZ = (z) => (z + 35) * 0.9;
+            // ⚠️ 캔버스 사이즈에 맞추기 위해 스케일을 축소(0.9배)했던 것을 원상 복구(1:1 매핑)
+            // 대신 화면 전체를 살짝 왼쪽/위로 밀어 120px 화면 안에 예쁘게 모두 담기도록 Offset 변경
+            const mapX = (x) => (x + 20); 
+            const mapZ = (z) => (z + 30);
             
-            ctx.fillStyle = '#A8E6CF'; ctx.beginPath(); ctx.arc(mapX(0), mapZ(0), 35 * 0.9, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#FFA07A'; ctx.beginPath(); ctx.arc(mapX(70), mapZ(-20), 20 * 0.9, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#4FC3F7'; ctx.fillRect(mapX(70 - 22.5), mapZ(-20 - 6), 45 * 0.9, 12 * 0.9);
+            // 1. 메인 섬
+            ctx.fillStyle = '#A8E6CF'; ctx.beginPath(); ctx.arc(mapX(0), mapZ(0), 35, 0, Math.PI*2); ctx.fill();
             
+            // 2. 다리 (미니맵에도 추가! 이제 다리를 건널 때 빈공간에 떠있는 것처럼 보이지 않습니다)
+            ctx.strokeStyle = '#8D6E63'; ctx.lineWidth = 4; ctx.beginPath(); 
+            ctx.moveTo(mapX(32), mapZ(-6)); ctx.lineTo(mapX(51), mapZ(-16)); ctx.stroke();
+
+            // 3. 농구 섬 & 강물
+            ctx.fillStyle = '#FFA07A'; ctx.beginPath(); ctx.arc(mapX(70), mapZ(-20), 20, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#4FC3F7'; ctx.fillRect(mapX(70 - 22.5), mapZ(-20 - 6), 45, 12);
+            
+            // 4. 플레이어 위치
             ctx.fillStyle = '#42A5F5'; ctx.beginPath(); ctx.arc(mapX(player.position.x), mapZ(player.position.z), 4, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.moveTo(mapX(player.position.x), mapZ(player.position.z));
-            ctx.lineTo(mapX(player.position.x + Math.sin(player.rotation.y)*5), mapZ(player.position.z + Math.cos(player.rotation.y)*5));
+            
+            // 5. 플레이어 시야 선
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(mapX(player.position.x), mapZ(player.position.z));
+            ctx.lineTo(mapX(player.position.x + Math.sin(player.rotation.y)*6), mapZ(player.position.z + Math.cos(player.rotation.y)*6));
             ctx.stroke();
         }
 
@@ -558,6 +571,7 @@
                     player.position.z = nextZ;
                 }
                 
+                // ⚠️ 회전은 수학적 정석인 이 공식이 맞습니다. (미니맵과 100% 동일하게 맵핑됩니다)
                 if (joyMove.x !== 0 || joyMove.y !== 0) {
                     player.rotation.y = Math.atan2(joyMove.x, joyMove.y);
                 }

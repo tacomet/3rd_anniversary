@@ -11,10 +11,10 @@
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .ui-element { pointer-events: auto; position: absolute; }
 
-        /* 미니맵 (비율 짜부 방지를 위해 CSS와 HTML 속성 통일) */
+        /* 미니맵 */
         #minimap { top: 10px; right: 10px; width: 120px; height: 120px; background-color: rgba(255, 255, 255, 0.7); border-radius: 10px; border: 2px solid #FF9AA2; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-        /* 방명록 디스플레이 (로컬 스토리지 연동) */
+        /* 방명록 디스플레이 (텍스트 수정됨) */
         #guestbook-display { display: none; top: 140px; right: 10px; width: 130px; background: rgba(255, 255, 255, 0.85); border: 2px solid #FF9AA2; border-radius: 10px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 13px; color: #333; line-height: 1.4; word-break: break-all; }
         .guestbook-title { font-weight: bold; color: #E57373; margin-bottom: 5px; font-size: 14px; }
 
@@ -27,24 +27,33 @@
         #action-btn { background-color: #E57373; }
         #shoot-btn { background-color: #FFA726; width: 100px; height: 100px; }
 
-        /* 모달 팝업 */
+        /* 모달 팝업 공통 */
         .modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 340px; background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-align: center; z-index: 100; pointer-events: auto; }
-        .modal h2 { margin-top: 0; color: #E57373; font-size: 20px; font-weight: bold; }
-        .modal p { color: #555; font-size: 15px; line-height: 1.5; margin-bottom: 15px; }
-        .modal button { background: #FFB7B2; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; color: #FFF; margin-top: 10px; cursor: pointer; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-size: 16px; }
-        .modal button:active { background: #E57373; }
+        .modal h2 { margin-top: 0; color: #E57373; font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+        .modal p { color: #555; font-size: 14px; line-height: 1.4; margin-bottom: 15px; }
+        .modal button.close-btn { background: #FFB7B2; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; color: #FFF; margin-top: 10px; cursor: pointer; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-size: 16px; }
+        .modal button.close-btn:active { background: #E57373; }
         .overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); pointer-events: auto; z-index: 99; }
 
         #intro-dialog, #intro-overlay { display: block; }
         #intro-dialog { bottom: 20px; top: auto; transform: translate(-50%, 0); }
-
         #guestbook-input { width: 90%; padding: 12px; margin-top: 10px; border: 2px solid #FFB7B2; border-radius: 8px; font-size: 14px; outline: none; }
-        #building-img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; background-color: #eee; }
+
+        /* 📸 다중 이미지 갤러리 슬라이더 스타일 */
+        .slider-wrapper { position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        #gallery-img { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; background-color: #eee; }
+        .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,183,178,0.9); color: white; border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        #slider-prev { left: -10px; }
+        #slider-next { right: -10px; }
+        #gallery-caption { font-weight: bold; color: #333; margin: 10px 0; font-size: 15px; min-height: 20px; }
+        
+        #gallery-indicators { display: flex; justify-content: center; gap: 6px; margin-bottom: 15px; }
+        .indicator { width: 8px; height: 8px; background: #ddd; border-radius: 50%; transition: background 0.3s; }
+        .indicator.active { background: #E57373; }
 
         #charge-bar-container { display: none; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 200px; height: 20px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 2px solid white; pointer-events: none; }
         #charge-bar { width: 0%; height: 100%; background: #FFA726; border-radius: 8px; }
     </style>
-    <!-- Three.js 및 Addons(GLTFLoader) Import Map -->
     <script type="importmap">
         {
             "imports": {
@@ -59,11 +68,10 @@
     <div id="game-canvas"></div>
 
     <div id="ui-layer">
-        <!-- 캔버스 자체 사이즈를 명시하여 짜부 방지 -->
         <canvas id="minimap" class="ui-element" width="120" height="120"></canvas>
         
         <div id="guestbook-display" class="ui-element">
-            <div class="guestbook-title">💌 정빈이의 편지</div>
+            <div class="guestbook-title">💌 재호의 편지</div>
             <div id="guestbook-text"></div>
         </div>
 
@@ -84,22 +92,32 @@
     <div id="intro-dialog" class="modal">
         <h2>✈️ 3주년 기념 휴가 출발!</h2>
         <p>드디어 기다리던 3주년 기념 휴가다!<br>비행기를 타고 정빈이가 기다리는 섬으로 출발해 볼까?</p>
-        <button id="intro-next-btn">비행기 탑승하기</button>
+        <button id="intro-next-btn" class="close-btn">비행기 탑승하기</button>
     </div>
 
-    <div id="building-modal" class="modal">
-        <img id="building-img" src="" alt="추억 사진">
-        <h2 id="building-title">제목</h2>
-        <p id="building-desc">설명 텍스트</p>
-        <button id="building-close-btn">추억 간직하기</button>
+    <!-- 📸 다중 이미지 갤러리 모달 -->
+    <div id="gallery-modal" class="modal">
+        <h2 id="gallery-title">제목</h2>
+        <p id="gallery-desc">설명 텍스트</p>
+        
+        <div class="slider-wrapper">
+            <button id="slider-prev" class="slider-btn">&lt;</button>
+            <img id="gallery-img" src="" alt="추억 사진">
+            <button id="slider-next" class="slider-btn">&gt;</button>
+        </div>
+        
+        <div id="gallery-caption">사진 설명</div>
+        <div id="gallery-indicators"></div>
+        
+        <button id="gallery-close-btn" class="close-btn">추억 간직하기</button>
     </div>
 
     <div id="npc-modal" class="modal">
         <h2>🌸 정빈</h2>
         <p>재호야, 3주년 축하해! 우리 섬에 온 걸 환영해 ♥<br>아래 공간에 나에게 남기고 싶은 메시지를 적어줘!</p>
         <input type="text" id="guestbook-input" placeholder="정빈이에게 전할 말 쓰기...">
-        <button id="npc-save-btn">편지 남기기</button>
-        <button id="npc-close-btn" style="background:#ddd; color:#333; margin-top:10px;">다음에 적기</button>
+        <button id="npc-save-btn" class="close-btn">편지 남기기</button>
+        <button id="npc-close-btn" class="close-btn" style="background:#ddd; color:#333; margin-top:10px;">다음에 적기</button>
     </div>
 
     <script type="module">
@@ -107,7 +125,51 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         // ==========================================
-        // 1. 초기 셋업
+        // 🗂️ 갤러리 이미지 & 텍스트 데이터 관리 (JSON 형태)
+        // 팁: url 부분에 실제 사진 링크(깃허브, 구글드라이브 등)를 넣으시면 됩니다!
+        // ==========================================
+        const GALLERY_DATA = {
+            "1주년 기념관": {
+                desc: "우리의 풋풋했던 첫해 추억들",
+                photos: [
+                    { url: "https://picsum.photos/400/200?random=11", text: "우리의 첫 데이트 날 💕" },
+                    { url: "https://picsum.photos/400/200?random=12", text: "처음 같이 바다 보러 갔던 날" },
+                    { url: "https://picsum.photos/400/200?random=13", text: "설렜던 첫 커플링 💍" }
+                ]
+            },
+            "2주년 기념관": {
+                desc: "함께여서 더욱 특별했던 두 번째 해",
+                photos: [
+                    { url: "https://picsum.photos/400/200?random=21", text: "2주년 기념 제주도 여행 🌴" },
+                    { url: "https://picsum.photos/400/200?random=22", text: "맛있는 거 먹고 행복했던 날" }
+                ]
+            },
+            "재호 생일 박물관": {
+                desc: "세상에서 가장 소중한 재호의 생일 파티 기록",
+                photos: [
+                    { url: "https://picsum.photos/400/200?random=31", text: "정빈이가 차려준 감동의 생일상 🎂" },
+                    { url: "https://picsum.photos/400/200?random=32", text: "생일 기념 호캉스 🏨" }
+                ]
+            },
+            "정빈 생일 박물관": {
+                desc: "재호가 정성스럽게 챙겨준 정빈이의 생일날",
+                photos: [
+                    { url: "https://picsum.photos/400/200?random=41", text: "정빈이 몰래 준비한 서프라이즈 파티 🎉" },
+                    { url: "https://picsum.photos/400/200?random=42", text: "선물 받고 환하게 웃던 정빈이 🥰" }
+                ]
+            },
+            "농구 코트 추억 갤러리": {
+                desc: "함께 농구하며 땀 흘렸던 우리만의 코트",
+                photos: [
+                    { url: "https://picsum.photos/400/200?random=51", text: "재호의 멋진 3점슛 🏀" },
+                    { url: "https://picsum.photos/400/200?random=52", text: "같이 운동하고 마시던 시원한 맥주 🍻" },
+                    { url: "https://picsum.photos/400/200?random=53", text: "농구장 벤치에서 찍은 셀카 📸" }
+                ]
+            }
+        };
+
+        // ==========================================
+        // 1. 초기 셋업 (빛 노출 +0.5 밝게 수정됨)
         // ==========================================
         const container = document.getElementById('game-canvas');
         const scene = new THREE.Scene();
@@ -123,16 +185,17 @@
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        // 조명 밝기 증가 (0.7 -> 1.2)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
         
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
         dirLight.position.set(20, 50, 20);
         dirLight.castShadow = true;
         scene.add(dirLight);
 
         // ==========================================
-        // 2. 머티리얼 설정 (로우폴리 파스텔톤)
+        // 2. 머티리얼 설정
         // ==========================================
         const matGrass = new THREE.MeshStandardMaterial({ color: 0xA8E6CF, flatShading: true });
         const matCourt = new THREE.MeshStandardMaterial({ color: 0xFFA07A, flatShading: true });
@@ -146,7 +209,7 @@
         const interactables = [];
 
         // ==========================================
-        // 3. 지형 생성 (섬, 다리, 강)
+        // 3. 지형 및 건물 생성
         // ==========================================
         const mainIsland = new THREE.Mesh(new THREE.CylinderGeometry(35, 35, 2, 24), matGrass);
         mainIsland.position.set(0, -1, 0); mainIsland.receiveShadow = true; scene.add(mainIsland);
@@ -164,70 +227,61 @@
             plank.receiveShadow = true; plank.castShadow = true; scene.add(plank);
         }
 
-        // ==========================================
-        // 4. 모델 래퍼 그룹 설정 및 GLTF 로더 연동
-        // ==========================================
         const gltfLoader = new GLTFLoader();
         let playerMixer = null;
         let walkAction = null, idleAction = null;
         let currentAnimAction = null;
 
-        // 외부 모델 로더 유틸리티 (Fallback 대응)
         function loadModelWithFallback(url, groupWrapper, fallbackGeometryCall, onLoaded) {
-            // 1) 임시 기본 도형으로 먼저 채움
             fallbackGeometryCall(groupWrapper);
-            
-            // 2) 실제 GLB 파일 로드 시도
             gltfLoader.load(url, (gltf) => {
-                groupWrapper.clear(); // 기본 도형 제거
-                const model = gltf.scene;
-                groupWrapper.add(model);
-                if(onLoaded) onLoaded(gltf); // 애니메이션 등 후속 처리
+                groupWrapper.clear(); 
+                groupWrapper.add(gltf.scene);
+                if(onLoaded) onLoaded(gltf); 
             }, undefined, (err) => {
-                console.log(`[${url}] 모델을 찾을 수 없어 기본 그래픽으로 대체됩니다.`);
+                // 모델이 없으면 기본 도형 유지
             });
         }
 
-        // 나무 모델 생성
         function createTree(x, z) {
             const grp = new THREE.Group();
-            grp.position.set(x, 0, z);
-            scene.add(grp);
+            grp.position.set(x, 0, z); scene.add(grp);
             loadModelWithFallback('tree.glb', grp, (wrapper) => {
-                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 3, 5), matWood);
-                trunk.position.y = 1.5;
-                const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 5, 6), new THREE.MeshStandardMaterial({color: 0x81C784, flatShading: true}));
-                leaves.position.y = 4.5;
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 3, 5), matWood); trunk.position.y = 1.5;
+                const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 5, 6), new THREE.MeshStandardMaterial({color: 0x81C784, flatShading: true})); leaves.position.y = 4.5;
                 wrapper.add(trunk); wrapper.add(leaves);
             });
         }
         createTree(-20, -15); createTree(20, 15); createTree(-25, 10); createTree(15, -25);
 
-        // 4개의 갤러리 건물 모델
-        function createBuilding(x, z, roofHex, title, desc, imgUrl) {
+        function createBuilding(x, z, roofHex, title) {
             const grp = new THREE.Group();
-            grp.position.set(x, 0, z);
-            scene.add(grp);
-            
+            grp.position.set(x, 0, z); scene.add(grp);
             loadModelWithFallback('building.glb', grp, (wrapper) => {
-                const bBody = new THREE.Mesh(new THREE.BoxGeometry(7, 6, 7), matBuilding);
-                bBody.position.y = 3;
-                const bRoof = new THREE.Mesh(new THREE.ConeGeometry(6, 5, 4), new THREE.MeshStandardMaterial({color: roofHex, flatShading:true}));
-                bRoof.position.y = 8.5; bRoof.rotation.y = Math.PI / 4;
+                const bBody = new THREE.Mesh(new THREE.BoxGeometry(7, 6, 7), matBuilding); bBody.position.y = 3;
+                const bRoof = new THREE.Mesh(new THREE.ConeGeometry(6, 5, 4), new THREE.MeshStandardMaterial({color: roofHex, flatShading:true})); bRoof.position.y = 8.5; bRoof.rotation.y = Math.PI / 4;
                 wrapper.add(bBody); wrapper.add(bRoof);
             });
-            grp.userData = { type: 'gallery', title, desc, img: imgUrl };
+            grp.userData = { type: 'gallery', title: title }; // JSON 데이터 맵핑용 키(title)
             interactables.push(grp);
         }
-        createBuilding(-12, -10, 0xFF6B6B, "1주년 기념관", "우리의 풋풋했던 첫해 추억들", "https://picsum.photos/300/160?random=1");
-        createBuilding(12, -10, 0x4ECDC4, "2주년 기념관", "함께여서 더욱 특별했던 두 번째 해", "https://picsum.photos/300/160?random=2");
-        createBuilding(-12, 10, 0xC7F464, "재호 생일 박물관", "세상에서 가장 소중한 재호의 생일 파티 기록", "https://picsum.photos/300/160?random=3");
-        createBuilding(12, 10, 0xFFD166, "정빈 생일 박물관", "재호가 정성스럽게 챙겨준 정빈이의 생일날", "https://picsum.photos/300/160?random=4");
+        createBuilding(-12, -10, 0xFF6B6B, "1주년 기념관");
+        createBuilding(12, -10, 0x4ECDC4, "2주년 기념관");
+        createBuilding(-12, 10, 0xC7F464, "재호 생일 박물관");
+        createBuilding(12, 10, 0xFFD166, "정빈 생일 박물관");
+
+        // 농구 갤러리 푯말
+        const signGrp = new THREE.Group();
+        const signPost = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 3), matWood); signPost.position.y = 1.5;
+        const signBoard = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 0.5), new THREE.MeshStandardMaterial({color:0xFFD166})); signBoard.position.y = 3;
+        signGrp.add(signPost); signGrp.add(signBoard);
+        signGrp.position.set(55, 0, -5); scene.add(signGrp);
+        signGrp.userData = { type: 'gallery', title: '농구 코트 추억 갤러리' };
+        interactables.push(signGrp);
 
         // 정빈 NPC
         const npcGrp = new THREE.Group();
-        npcGrp.position.set(0, 0, 20); npcGrp.rotation.y = Math.PI;
-        scene.add(npcGrp);
+        npcGrp.position.set(0, 0, 20); npcGrp.rotation.y = Math.PI; scene.add(npcGrp);
         loadModelWithFallback('character_jeongbin.glb', npcGrp, (wrapper) => {
             const nBody = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 2, 8), matJeongbin); nBody.position.y = 1;
             const nHead = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 8), matSkin); nHead.position.y = 2.8;
@@ -236,13 +290,21 @@
         npcGrp.userData = { type: 'npc' };
         interactables.push(npcGrp);
 
-        // 농구 골대 및 푯말
+        // 🏀 농구 골대 (백보드 및 림 디테일 추가)
         const hoopGrp = new THREE.Group();
-        hoopGrp.add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 9), new THREE.MeshStandardMaterial({color:0x555}))).position.set(55, 4.5, -28);
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 9), new THREE.MeshStandardMaterial({color:0x777777}));
+        pole.position.set(55, 4.5, -28);
+        const backboard = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 0.2), new THREE.MeshStandardMaterial({color:0xFFFFFF, flatShading: true}));
+        backboard.position.set(55, 8, -27.8);
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.1, 8, 16), new THREE.MeshStandardMaterial({color:0xE65100}));
+        rim.position.set(55, 7, -26.8);
+        rim.rotation.x = Math.PI / 2;
+        hoopGrp.add(pole); hoopGrp.add(backboard); hoopGrp.add(rim);
         scene.add(hoopGrp);
-        const hoopTarget = new THREE.Vector3(55, 7, -26.6);
+        
+        const hoopTarget = new THREE.Vector3(55, 7, -26.8);
 
-        // 플레이어 (재호) 모델 및 애니메이션 믹서 연결
+        // 플레이어 (재호)
         const player = new THREE.Group();
         player.position.set(0, 0, 26);
         scene.add(player);
@@ -254,7 +316,6 @@
         }, (gltf) => {
             playerMixer = new THREE.AnimationMixer(gltf.scene);
             if (gltf.animations.length > 0) {
-                // 모델 안에 Idle, Walk 애니메이션이 있다고 가정
                 const idleClip = THREE.AnimationClip.findByName(gltf.animations, 'Idle');
                 const walkClip = THREE.AnimationClip.findByName(gltf.animations, 'Walk');
                 if(idleClip) idleAction = playerMixer.clipAction(idleClip);
@@ -263,7 +324,6 @@
             }
         });
 
-        // 애니메이션 부드러운 전환 함수
         function playAnim(action) {
             if (!action || currentAnimAction === action) return;
             if (currentAnimAction) currentAnimAction.fadeOut(0.2);
@@ -272,36 +332,24 @@
         }
 
         // ==========================================
-        // 5. 슛 궤적 시스템
+        // 4. 시스템 조작 및 궤적 시스템
         // ==========================================
         const trajectoryPoints = [];
         for(let i=0; i<=20; i++) trajectoryPoints.push(new THREE.Vector3());
         const trajectoryGeo = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
         const trajectoryMat = new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.5, gapSize: 0.2, linewidth: 2 });
         const trajectoryLine = new THREE.Line(trajectoryGeo, trajectoryMat);
-        trajectoryLine.computeLineDistances();
-        trajectoryLine.visible = false;
-        scene.add(trajectoryLine);
+        trajectoryLine.computeLineDistances(); trajectoryLine.visible = false; scene.add(trajectoryLine);
 
         const basketball = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), new THREE.MeshStandardMaterial({color: 0xE65100}));
-        basketball.visible = false;
-        scene.add(basketball);
+        basketball.visible = false; scene.add(basketball);
 
-        // ==========================================
-        // 6. 시스템 조작 및 Local Storage 로드
-        // ==========================================
         let isJoystickActive = false, joyMove = { x: 0, y: 0 };
         const MOVEMENT_SPEED = 0.22;
         let currentMode = 'UI_OPEN', currentInteractable = null;
         let isCharging = false, chargeAmount = 0, isBallFlying = false, flightTime = 0;
         let ballStartPos = new THREE.Vector3(), ballTargetPos = new THREE.Vector3(), ballPeakHeight = 0;
 
-        const actionBtn = document.getElementById('action-btn');
-        const shootBtn = document.getElementById('shoot-btn');
-        const chargeBarContainer = document.getElementById('charge-bar-container');
-        const chargeBar = document.getElementById('charge-bar');
-        
-        // --- [로컬 스토리지 데이터 불러오기] ---
         window.addEventListener('DOMContentLoaded', () => {
             const savedData = localStorage.getItem('anniversary3_guestbook');
             if(savedData) {
@@ -310,9 +358,7 @@
             }
         });
 
-        // ==========================================
-        // 7. 가상 조이스틱
-        // ==========================================
+        // 조이스틱
         const joyZone = document.getElementById('joystick-zone');
         const joyKnob = document.getElementById('joystick-knob');
         let joyCenter = { x: 0, y: 0 };
@@ -331,37 +377,65 @@
         });
 
         function updateJoystick(e) {
-            let dx = e.clientX - joyCenter.x;
-            let dy = e.clientY - joyCenter.y;
+            let dx = e.clientX - joyCenter.x; let dy = e.clientY - joyCenter.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist > 35) { dx = (dx / dist) * 35; dy = (dy / dist) * 35; }
             joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
             joyMove.x = dx / 35; joyMove.y = dy / 35;
         }
 
-        // --- [이동 가능 구역(Boundary) 제한 함수] ---
         function canMoveTo(newX, newZ) {
-            // 1) 메인 섬 반경 (34.5)
             if (Math.hypot(newX, newZ) <= 34.5) return true;
-            // 2) 농구 섬 반경 (19.5, 중심 55, -15)
             if (Math.hypot(newX - 55, newZ + 15) <= 19.5) return true;
-            // 3) 다리 영역 (대략적인 사각형 충돌 범위)
             const distToBridge = distToSegment(newX, newZ, 30, -1, 48, -13);
             if (distToBridge <= 3.5) return true;
-            
             return false;
         }
-        // 두 점 사이의 선분과 플레이어 좌표 최단거리 계산 공식
         function distToSegment(px, py, x1, y1, x2, y2) {
             const l2 = (x1 - x2)**2 + (y1 - y2)**2;
             if (l2 === 0) return Math.hypot(px - x1, py - y1);
-            let t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2;
-            t = Math.max(0, Math.min(1, t));
+            let t = Math.max(0, Math.min(1, ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2));
             return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
         }
 
         // ==========================================
-        // 8. 상호작용 및 UI 모달 로직
+        // 5. 갤러리 슬라이더 로직
+        // ==========================================
+        let currentGalleryData = null;
+        let currentPhotoIndex = 0;
+        const actionBtn = document.getElementById('action-btn');
+        const shootBtn = document.getElementById('shoot-btn');
+
+        function updateGalleryView() {
+            if(!currentGalleryData) return;
+            const photo = currentGalleryData.photos[currentPhotoIndex];
+            document.getElementById('gallery-img').src = photo.url;
+            document.getElementById('gallery-caption').innerText = photo.text;
+            
+            // 인디케이터 업데이트
+            const indicators = document.getElementById('gallery-indicators');
+            indicators.innerHTML = '';
+            for(let i=0; i<currentGalleryData.photos.length; i++) {
+                const dot = document.createElement('div');
+                dot.className = `indicator ${i === currentPhotoIndex ? 'active' : ''}`;
+                indicators.appendChild(dot);
+            }
+        }
+
+        document.getElementById('slider-prev').addEventListener('click', () => {
+            if(!currentGalleryData) return;
+            currentPhotoIndex = (currentPhotoIndex - 1 + currentGalleryData.photos.length) % currentGalleryData.photos.length;
+            updateGalleryView();
+        });
+
+        document.getElementById('slider-next').addEventListener('click', () => {
+            if(!currentGalleryData) return;
+            currentPhotoIndex = (currentPhotoIndex + 1) % currentGalleryData.photos.length;
+            updateGalleryView();
+        });
+
+        // ==========================================
+        // 6. 상호작용 및 UI 모달 이벤트
         // ==========================================
         function checkInteractions() {
             if (currentMode === 'UI_OPEN') return;
@@ -376,8 +450,7 @@
             if (currentMode === 'NORMAL') {
                 let nearest = null, minDist = 7;
                 for(let obj of interactables) {
-                    const dist = player.position.distanceTo(obj.position);
-                    if (dist < minDist) { minDist = dist; nearest = obj; }
+                    if (player.position.distanceTo(obj.position) < minDist) { minDist = player.position.distanceTo(obj.position); nearest = obj; }
                 }
                 currentInteractable = nearest;
                 if (currentInteractable) {
@@ -396,27 +469,25 @@
             document.getElementById('intro-overlay').style.display = 'block';
 
             if (data.type === 'gallery') {
-                document.getElementById('building-modal').style.display = 'block';
-                document.getElementById('building-title').innerText = data.title;
-                document.getElementById('building-desc').innerText = data.desc;
-                document.getElementById('building-img').src = data.img;
+                document.getElementById('gallery-modal').style.display = 'block';
+                document.getElementById('gallery-title').innerText = data.title;
+                
+                // JSON에서 갤러리 데이터 로드
+                currentGalleryData = GALLERY_DATA[data.title];
+                document.getElementById('gallery-desc').innerText = currentGalleryData.desc;
+                currentPhotoIndex = 0; // 항상 첫 사진부터
+                updateGalleryView();
             } else if (data.type === 'npc') {
                 document.getElementById('npc-modal').style.display = 'block';
             }
         });
 
-        // --- [방명록 로컬 스토리지 저장 로직] ---
         document.getElementById('npc-save-btn').addEventListener('click', () => {
             const val = document.getElementById('guestbook-input').value;
             if(val.trim() === '') { alert("정빈이에게 남길 메시지를 적어주세요!"); return; }
-            
-            // 로컬 스토리지 영구 저장
             localStorage.setItem('anniversary3_guestbook', val);
-            
-            // UI 업데이트
             document.getElementById('guestbook-text').innerText = val;
             document.getElementById('guestbook-display').style.display = 'block';
-            
             alert("정빈이에게 편지를 성공적으로 남겼습니다! ❤️");
             document.getElementById('guestbook-input').value = '';
             closeUI();
@@ -432,11 +503,11 @@
             document.querySelectorAll('.modal, .overlay').forEach(e => e.style.display = 'none');
             setTimeout(() => { currentMode = 'NORMAL'; }, 100);
         }
-        document.getElementById('building-close-btn').addEventListener('click', closeUI);
+        document.getElementById('gallery-close-btn').addEventListener('click', closeUI);
         document.getElementById('npc-close-btn').addEventListener('click', closeUI);
 
         // ==========================================
-        // 9. 농구 슈팅 게임 시스템
+        // 7. 농구 슈팅 게임 로직
         // ==========================================
         shootBtn.addEventListener('pointerdown', () => {
             if(isBallFlying) return;
@@ -445,9 +516,7 @@
         });
 
         window.addEventListener('pointerup', () => {
-            if(isCharging) {
-                isCharging = false; chargeBarContainer.style.display = 'none'; trajectoryLine.visible = false; shootBall();
-            }
+            if(isCharging) { isCharging = false; chargeBarContainer.style.display = 'none'; trajectoryLine.visible = false; shootBall(); }
         });
 
         function updateTrajectory() {
@@ -482,31 +551,26 @@
         }
 
         // ==========================================
-        // 10. 미니맵 (짜부 안되게 1:1 좌표 매핑 수정)
+        // 8. 미니맵
         // ==========================================
         const minimapCanvas = document.getElementById('minimap');
         const ctx = minimapCanvas.getContext('2d');
         function drawMinimap() {
             ctx.clearRect(0, 0, 120, 120);
             ctx.fillStyle = '#FFE4E1'; ctx.fillRect(0, 0, 120, 120);
-
-            // -40~80의 공간(120단위)을 캔버스 120px에 1:1로 정확하게 매핑
             const mapX = (x) => (x + 40);
             const mapZ = (z) => (z + 40);
-
             ctx.fillStyle = '#A8E6CF'; ctx.beginPath(); ctx.arc(mapX(0), mapZ(0), 35, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = '#FFA07A'; ctx.beginPath(); ctx.arc(mapX(55), mapZ(-15), 20, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = '#4FC3F7'; ctx.fillRect(mapX(35), mapZ(-20), 40, 6);
-
             ctx.fillStyle = '#42A5F5'; ctx.beginPath(); ctx.arc(mapX(player.position.x), mapZ(player.position.z), 4, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = '#fff'; ctx.beginPath();
-            ctx.moveTo(mapX(player.position.x), mapZ(player.position.z));
+            ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.moveTo(mapX(player.position.x), mapZ(player.position.z));
             ctx.lineTo(mapX(player.position.x + Math.sin(player.rotation.y)*5), mapZ(player.position.z + Math.cos(player.rotation.y)*5));
             ctx.stroke();
         }
 
         // ==========================================
-        // 11. 메인 렌더링 루프
+        // 9. 메인 렌더링 루프
         // ==========================================
         const clock = new THREE.Clock();
 
@@ -514,23 +578,24 @@
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
 
-            // GLTF 애니메이션 업데이트
             if(playerMixer) playerMixer.update(delta);
 
             if (isJoystickActive && currentMode !== 'UI_OPEN' && !isCharging) {
                 const nextX = player.position.x + joyMove.x * MOVEMENT_SPEED;
                 const nextZ = player.position.z + joyMove.y * MOVEMENT_SPEED;
                 
-                // 이동 가능 영역 체크 후 이동 처리
                 if (canMoveTo(nextX, nextZ)) {
                     player.position.x = nextX;
                     player.position.z = nextZ;
                 }
                 
-                if (joyMove.x !== 0 || joyMove.y !== 0) player.rotation.y = Math.atan2(joyMove.x, joyMove.y);
-                playAnim(walkAction); // 걷기 애니메이션
+                // ⚠️ 좌우 반전 버그 수정: Math.atan2의 첫 번째 인자(X방향)에 -를 붙여 좌우 회전 방향을 180도 뒤집었습니다.
+                if (joyMove.x !== 0 || joyMove.y !== 0) {
+                    player.rotation.y = Math.atan2(-joyMove.x, joyMove.y);
+                }
+                playAnim(walkAction); 
             } else {
-                playAnim(idleAction); // 대기 애니메이션
+                playAnim(idleAction); 
             }
 
             camera.position.lerp(player.position.clone().add(cameraOffset), 0.08);
